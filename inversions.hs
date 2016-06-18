@@ -1,4 +1,4 @@
-{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE NoImplicitPrelude, LambdaCase, FlexibleContexts #-}
 
 import Protolude
 
@@ -27,33 +27,20 @@ count_inv a buf
 
       V.unsafeCopy (V.slice 0 mid buf) (V.slice 0 mid a)
 
-      idx1' <- newSTRef 0
-      idx2' <- newSTRef mid
-
-      count <- newSTRef (counta + countb)
+      idx1 <- mutable 0
+      idx2 <- mutable mid
+      count <- mutable (counta + countb)
 
       for_ [0..(len - 1)] $ \i -> do
-        idx1 <- readSTRef idx1'
-        idx2 <- readSTRef idx2'
-
-        let okBranch = do
-             V.unsafeWrite a i =<< V.unsafeRead buf idx1
-             modifySTRef' idx1' (+1)
-             modifySTRef' count (+(idx2 - mid))
-
-        let wrongBranch = do
-             V.unsafeWrite a i =<< V.unsafeRead a idx2
-             modifySTRef' idx2' (+1)
-
-        if idx1 < mid then if (idx2 == len)
-                           then okBranch
-                           else do
-                               buf_idx1 <- V.unsafeRead buf idx1
-                               a_idx2 <- V.unsafeRead a idx2
-                               if buf_idx1 <= a_idx2
-                                 then okBranch
-                                 else wrongBranch
-          else wrongBranch
+        cond <- (idx1 .< mid) .&&. ((idx2 .== len) .||. ((buf `at` idx1) .<=. (a `at` idx2)))
+        if cond
+          then do
+             write a i (buf `at` idx1)
+             inc idx1
+             count += (idx2 .- mid)
+          else do
+             write a i (a `at` idx2)
+             inc idx2
 
       readSTRef count
 
@@ -67,3 +54,23 @@ main :: IO ()
 main = do
     nums <- parse
     print (count_inversion nums)
+
+
+-- DSL for ST, because else the syntax sucks ;)
+(.-) ref value = readSTRef ref >>= (\v -> return (v - value))
+(+=) v value = value >>= \v' -> modifySTRef' v (+v')
+inc v = modifySTRef' v (+1)
+at v idx = V.unsafeRead v =<< readSTRef idx
+
+(.<) a b = (<b) <$> readSTRef a
+(.==) a b = (==b) <$> readSTRef a
+(.<=.) ma mb = (<=) <$> ma <*> mb
+(.||.) ma mb = ma >>= \case
+  True -> return True
+  False -> mb
+(.&&.) ma mb = ma >>= \case
+  True -> mb
+  False -> return False
+
+write a idx v = V.unsafeWrite a idx =<< v
+mutable = newSTRef
