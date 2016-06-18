@@ -30,3 +30,7 @@ countSplit (x:xs) (y:ys)
 main = do
     nums <- liftM (map (read :: String -> Int) . lines) getContents
     print $ inversions nums
+
+inversions' :: [Int] -> Int
+inversions' [] = 0
+inversions' (x:xs) = (length (filter (<x) xs)) + inversions' xs
