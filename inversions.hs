@@ -27,8 +27,11 @@ countSplit len (x:xs) (y:ys)
                   l     = snd leftSplit
                   r     = (snd rightSplit) + len
 
+parse = liftM (map (read :: String -> Int) . lines) getContents
+
+
 main = do
-    nums <- liftM (map (read :: String -> Int) . lines) getContents
+    nums <- parse
     print $ inversions nums
 
 inversions' :: [Int] -> Int
