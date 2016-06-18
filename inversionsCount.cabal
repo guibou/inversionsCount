@@ -19,4 +19,5 @@ executable inversionsCount
   build-depends:       base >= 4.7 && < 5
                       ,attoparsec
                       ,bytestring
+                      ,vector
   ghc-options: -Wall -O2
