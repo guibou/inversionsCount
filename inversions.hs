@@ -26,7 +26,7 @@ count_inv a buf
       counta <- count_inv (V.slice 0 mid a) buf
       countb <- count_inv (V.slice mid (len - mid) a) buf
 
-      V.copy (V.slice 0 mid buf) (V.slice 0 mid a)
+      V.unsafeCopy (V.slice 0 mid buf) (V.slice 0 mid a)
 
       idx1' <- newIORef 0
       idx2' <- newIORef mid
@@ -37,24 +37,20 @@ count_inv a buf
         idx1 <- readIORef idx1'
         idx2 <- readIORef idx2'
 
-
-        {-
-        -}
-
         let okBranch = do
-             V.write a i =<< V.read buf idx1
+             V.unsafeWrite a i =<< V.unsafeRead buf idx1
              modifyIORef' idx1' (+1)
              modifyIORef' count (+(idx2 - mid))
 
         let wrongBranch = do
-             V.write a i =<< V.read a idx2
+             V.unsafeWrite a i =<< V.unsafeRead a idx2
              modifyIORef' idx2' (+1)
 
         if idx1 < mid then if (idx2 == len)
                            then okBranch
                            else do
-                               buf_idx1 <- V.read buf idx1
-                               a_idx2 <- V.read a idx2
+                               buf_idx1 <- V.unsafeRead buf idx1
+                               a_idx2 <- V.unsafeRead a idx2
                                if buf_idx1 <= a_idx2
                                  then okBranch
                                  else wrongBranch
@@ -71,6 +67,6 @@ parse = do
 main :: IO ()
 main = do
     nums <- parse
-    v <- V2.thaw ((V2.fromList nums))
+    v <- V2.unsafeThaw ((V2.fromList nums))
     c <- count_inversion v
     print c
