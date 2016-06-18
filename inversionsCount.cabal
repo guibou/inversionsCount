@@ -17,4 +17,6 @@ executable inversionsCount
   main-is:             inversions.hs
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
+                      ,attoparsec
+                      ,bytestring
   ghc-options: -Wall -O2

@@ -1,4 +1,5 @@
-import Control.Monad
+import qualified Data.Attoparsec.ByteString.Char8 as P
+import qualified Data.ByteString
 
 inversions :: [Int] -> Int
 inversions = snd . countInversions
@@ -26,9 +27,11 @@ countSplit len (x:xs) (y:ys)
                   right = fst rightSplit
                   l     = snd leftSplit
                   r     = (snd rightSplit) + len
-
-parse = liftM (map (read :: String -> Int) . lines) getContents
-
+parse :: IO [Int]
+parse = do
+  content <- Data.ByteString.getContents
+  let Right res = P.parseOnly (P.decimal `P.sepBy` (P.char '\n') ) content
+  return res
 
 main = do
     nums <- parse
