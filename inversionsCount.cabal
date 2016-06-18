@@ -20,4 +20,5 @@ executable inversionsCount
                       ,attoparsec
                       ,bytestring
                       ,vector
+                      ,protolude
   ghc-options: -Wall -O2

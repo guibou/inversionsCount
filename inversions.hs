@@ -1,14 +1,14 @@
+{-# LANGUAGE NoImplicitPrelude #-}
+
+import Protolude
+
 import qualified Data.Attoparsec.ByteString.Char8 as P
 import qualified Data.ByteString
 
 import qualified Data.Vector.Unboxed.Mutable as V
 import qualified Data.Vector.Unboxed as V2
 
-import Data.Int (Int32)
 import Data.STRef
-
-import Control.Monad.ST
-import Data.Foldable (for_)
 
 count_inversion :: [Int32] -> Int
 count_inversion l = runST $ do
