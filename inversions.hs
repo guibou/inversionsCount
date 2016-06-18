@@ -62,7 +62,7 @@ count_inv a buf
 
       readIORef count
 
-parse :: IO [Int]
+parse :: IO [Int32]
 parse = do
   content <- Data.ByteString.getContents
   let Right res = P.parseOnly (P.decimal `P.sepBy` (P.char '\n') ) content
@@ -71,7 +71,6 @@ parse = do
 main :: IO ()
 main = do
     nums <- parse
-    let nums32 = map fromIntegral nums
-    v <- V2.thaw ((V2.fromList nums32) :: V2.Vector Int32)
+    v <- V2.thaw ((V2.fromList nums))
     c <- count_inversion v
     print c
