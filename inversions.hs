@@ -1,4 +1,4 @@
-{-# LANGUAGE NoImplicitPrelude, LambdaCase, FlexibleContexts #-}
+{-# LANGUAGE NoImplicitPrelude, LambdaCase, FlexibleContexts, Strict #-}
 
 import Protolude
 
