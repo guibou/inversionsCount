@@ -8,6 +8,8 @@ import qualified Data.ByteString
 import qualified Data.Vector.Unboxed.Mutable as V
 import qualified Data.Vector.Unboxed as V2
 
+import Data.Time.Clock
+
 count_inversion :: [Int32] -> Int
 count_inversion l = runST $ do
   d <- V2.unsafeThaw (V2.fromList l)
@@ -47,8 +49,14 @@ parse = do
 
 main :: IO ()
 main = do
+    start <- getCurrentTime
     nums <- parse
+    middle <- getCurrentTime
     print (count_inversion nums)
+    end <- getCurrentTime
+
+    print ("Parsing time", diffUTCTime middle start)
+    print ("Compute time", diffUTCTime end middle)
 
 
 -- DSL for ST, because else the syntax sucks ;)
