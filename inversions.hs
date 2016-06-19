@@ -29,13 +29,13 @@ count_inv a buf
       let go idx1 idx2 count i
             | i == len = return count
             | otherwise = do
-                cond <- (return (idx1 < mid)) .&&. (return (idx2 == len) .||. ((buf `at` idx1) .<=. (a `at` idx2)))
+                cond <- (return (idx1 < mid)) .&&. (return (idx2 == len) .||. ((V.unsafeRead buf idx1) .<=. (V.unsafeRead a idx2)))
                 if cond
                   then do
-                  write a i (buf `at` idx1)
+                  V.unsafeWrite a i =<< V.unsafeRead buf idx1
                   go (idx1 + 1) idx2 (count + idx2 - mid) (i+1)
                   else do
-                  write a i (a `at` idx2)
+                  V.unsafeWrite a i =<< V.unsafeRead a idx2
                   go idx1 (idx2 + 1) count (i+1)
 
       go 0 mid (counta + countb) 0
@@ -72,8 +72,6 @@ main = do
 
 
 -- DSL for ST, because else the syntax sucks ;)
-at v idx = V.unsafeRead v idx
-
 (.<=.) ma mb = (<=) <$> ma <*> mb
 (.||.) ma mb = ma >>= \case
   True -> return True
@@ -81,5 +79,3 @@ at v idx = V.unsafeRead v idx
 (.&&.) ma mb = ma >>= \case
   True -> mb
   False -> return False
-
-write a idx v = V.unsafeWrite a idx =<< v
