@@ -2,8 +2,7 @@
 
 import Protolude
 
-import qualified Data.Attoparsec.ByteString.Char8 as P
-import qualified Data.ByteString
+import qualified Data.ByteString.Char8 as B
 
 import qualified Data.Vector.Unboxed.Mutable as V
 import qualified Data.Vector.Unboxed as V2
@@ -43,9 +42,22 @@ count_inv a buf
 
 parse :: IO [Int32]
 parse = do
-  content <- Data.ByteString.getContents
-  let Right res = P.parseOnly (P.decimal `P.sepBy` (P.char '\n') ) content
-  return res
+  content <- B.getContents
+  return $ go content
+ where
+  go b = case B.uncons b of
+      Nothing -> []
+      Just ('\n',b) -> go b
+      Just ('-',b) -> go'' 0 b
+      Just (d,b) -> go' (fromIntegral (ord d - 48)) b
+  go' v b = case B.uncons b of
+      Nothing -> [v]
+      Just ('\n',b) -> v : go b
+      Just (d,b) -> go' (v*10 + fromIntegral (ord d - 48)) b
+  go'' v b = case B.uncons b of
+      Nothing -> [v]
+      Just ('\n',b) -> v : go b
+      Just (d,b) -> go' (v*10 - fromIntegral (ord d - 48)) b
 
 main :: IO ()
 main = do
