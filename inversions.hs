@@ -8,8 +8,6 @@ import qualified Data.ByteString
 import qualified Data.Vector.Unboxed.Mutable as V
 import qualified Data.Vector.Unboxed as V2
 
-import Data.Mutable
-
 count_inversion :: [Int32] -> Int
 count_inversion l = runST $ do
   d <- V2.unsafeThaw (V2.fromList l)
@@ -27,22 +25,19 @@ count_inv a buf
 
       V.unsafeCopy (V.slice 0 mid buf) (V.slice 0 mid a)
 
-      idx1 <- mutable 0
-      idx2 <- mutable mid
-      count <- mutable (counta + countb)
+      let go idx1 idx2 count i
+            | i == len = return count
+            | otherwise = do
+                cond <- (return (idx1 < mid)) .&&. (return (idx2 == len) .||. ((buf `at` idx1) .<=. (a `at` idx2)))
+                if cond
+                  then do
+                  write a i (buf `at` idx1)
+                  go (idx1 + 1) idx2 (count + idx2 - mid) (i+1)
+                  else do
+                  write a i (a `at` idx2)
+                  go idx1 (idx2 + 1) count (i+1)
 
-      for_ [0..(len - 1)] $ \i -> do
-        cond <- (idx1 .< mid) .&&. ((idx2 .== len) .||. ((buf `at` idx1) .<=. (a `at` idx2)))
-        if cond
-          then do
-             write a i (buf `at` idx1)
-             inc idx1
-             count += (idx2 .- mid)
-          else do
-             write a i (a `at` idx2)
-             inc idx2
-
-      readRef count
+      go 0 mid (counta + countb) 0
 
 parse :: IO [Int32]
 parse = do
@@ -57,13 +52,8 @@ main = do
 
 
 -- DSL for ST, because else the syntax sucks ;)
-(.-) ref value = readRef ref >>= (\v -> return (v - value))
-(+=) v value = value >>= \v' -> modifyRef' v (+v')
-inc v = modifyRef' v (+1)
-at v idx = V.unsafeRead v =<< readRef idx
+at v idx = V.unsafeRead v idx
 
-(.<) a b = (<b) <$> readRef a
-(.==) a b = (==b) <$> readRef a
 (.<=.) ma mb = (<=) <$> ma <*> mb
 (.||.) ma mb = ma >>= \case
   True -> return True
@@ -73,8 +63,3 @@ at v idx = V.unsafeRead v =<< readRef idx
   False -> return False
 
 write a idx v = V.unsafeWrite a idx =<< v
-
--- This signature is mandatory for good performances
--- I still don't understand why
-mutable :: forall s. Int -> ST s (PRef s Int)
-mutable v = asPRef <$> newRef v

@@ -21,5 +21,4 @@ executable inversionsCount
                       ,bytestring
                       ,vector
                       ,protolude
-                      ,mutable-containers
   ghc-options: -Wall -O2
