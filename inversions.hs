@@ -40,6 +40,13 @@ count_inv a buf
 
       go 0 mid (counta + countb) 0
 
+-- This equals the C code in performance
+parse' :: IO [Int32]
+parse' = do
+  content <- B.getContents
+  return $ map fromIntegral $ unfoldr (B.readInt . B.dropWhile (=='\n')) $ content
+
+-- This beats the C code in performance, at the cost of a few uglyness ;)
 parse :: IO [Int32]
 parse = do
   content <- B.getContents
