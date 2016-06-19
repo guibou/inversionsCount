@@ -1,4 +1,4 @@
-{-# LANGUAGE NoImplicitPrelude, LambdaCase, FlexibleContexts, Strict #-}
+{-# LANGUAGE NoImplicitPrelude, LambdaCase, FlexibleContexts, Strict, TypeFamilies, ExplicitForAll #-}
 
 import Protolude
 
@@ -8,7 +8,7 @@ import qualified Data.ByteString
 import qualified Data.Vector.Unboxed.Mutable as V
 import qualified Data.Vector.Unboxed as V2
 
-import Data.STRef
+import Data.Mutable
 
 count_inversion :: [Int32] -> Int
 count_inversion l = runST $ do
@@ -42,7 +42,7 @@ count_inv a buf
              write a i (a `at` idx2)
              inc idx2
 
-      readSTRef count
+      readRef count
 
 parse :: IO [Int32]
 parse = do
@@ -57,13 +57,13 @@ main = do
 
 
 -- DSL for ST, because else the syntax sucks ;)
-(.-) ref value = readSTRef ref >>= (\v -> return (v - value))
-(+=) v value = value >>= \v' -> modifySTRef' v (+v')
-inc v = modifySTRef' v (+1)
-at v idx = V.unsafeRead v =<< readSTRef idx
+(.-) ref value = readRef ref >>= (\v -> return (v - value))
+(+=) v value = value >>= \v' -> modifyRef' v (+v')
+inc v = modifyRef' v (+1)
+at v idx = V.unsafeRead v =<< readRef idx
 
-(.<) a b = (<b) <$> readSTRef a
-(.==) a b = (==b) <$> readSTRef a
+(.<) a b = (<b) <$> readRef a
+(.==) a b = (==b) <$> readRef a
 (.<=.) ma mb = (<=) <$> ma <*> mb
 (.||.) ma mb = ma >>= \case
   True -> return True
@@ -73,4 +73,8 @@ at v idx = V.unsafeRead v =<< readSTRef idx
   False -> return False
 
 write a idx v = V.unsafeWrite a idx =<< v
-mutable = newSTRef
+
+-- This signature is mandatory for good performances
+-- I still don't understand why
+mutable :: forall s. Int -> ST s (PRef s Int)
+mutable v = asPRef <$> newRef v
