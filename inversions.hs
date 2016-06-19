@@ -29,7 +29,7 @@ count_inv a buf
       let go idx1 idx2 count i
             | i == len = return count
             | otherwise = do
-                cond <- (return (idx1 < mid)) .&&. (return (idx2 == len) .||. ((V.unsafeRead buf idx1) .<=. (V.unsafeRead a idx2)))
+                cond <- (idx1 < mid) &&. ((idx2 == len) ||. ((V.unsafeRead buf idx1) .<=. (V.unsafeRead a idx2)))
                 if cond
                   then do
                   V.unsafeWrite a i =<< V.unsafeRead buf idx1
@@ -73,9 +73,9 @@ main = do
 
 -- DSL for ST, because else the syntax sucks ;)
 (.<=.) ma mb = (<=) <$> ma <*> mb
-(.||.) ma mb = ma >>= \case
-  True -> return True
-  False -> mb
-(.&&.) ma mb = ma >>= \case
-  True -> mb
-  False -> return False
+
+(||.) True _ = return True
+(||.) False mb = mb
+
+(&&.) False _ = return False
+(&&.) True mb = mb
